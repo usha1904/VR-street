@@ -52,20 +52,21 @@
 
   <a-scene webxr="referenceSpaceType: local-floor" loading-screen="enabled: false">
     
-    <!-- Direct Asset References (No folder prefix) -->
+    <!-- Asset Preload Registry -->
     <a-assets timeout="10000">
       <img id="scene-bangkok" src="Bagnkok.jpg">
       <img id="scene-arora" src="Arora.jpg">
       <img id="scene-pool" src="Pool.jpg">
+      <audio id="aurora-sound" src="aurora_sound.mp3" preload="auto" loop="true"></audio>
     </a-assets>
 
     <!-- 360 Spherical Viewport -->
     <a-sky id="skybox" src="#scene-arora" rotation="0 -90 0" material="opacity: 1; transparent: true"></a-sky>
 
-    <!-- Headset Rig & Input Controls -->
+    <!-- Camera Rig & Controller Handlers -->
     <a-entity id="rig" position="0 0 0">
       <a-camera id="camera" position="0 1.6 0">
-        <!-- Reticle for Hands-Free / Dwell Selection -->
+        <!-- Reticle for Hands-Free Gaze / Dwell (1000ms fuse) -->
         <a-cursor
           id="cursor"
           color="#38bdf8"
@@ -79,119 +80,163 @@
         </a-cursor>
       </a-camera>
 
-      <!-- Meta Quest Touch Controller Pointers -->
-      <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10" line="color: #38bdf8; opacity: 0.8"></a-entity>
-      <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10" line="color: #38bdf8; opacity: 0.8"></a-entity>
+      <!-- Meta Quest Touch Controller Pointers with Tooltips -->
+      <a-entity id="leftHand" laser-controls="hand: left" raycaster="objects: .clickable; far: 10" line="color: #38bdf8; opacity: 0.8">
+        <a-text value="Point & Pull Trigger" position="0 0.08 -0.15" rotation="-30 0 0" scale="0.18 0.18 0.18" align="center" color="#94a3b8"></a-text>
+      </a-entity>
+      <a-entity id="rightHand" laser-controls="hand: right" raycaster="objects: .clickable; far: 10" line="color: #38bdf8; opacity: 0.8">
+        <a-text value="Point & Pull Trigger" position="0 0.08 -0.15" rotation="-30 0 0" scale="0.18 0.18 0.18" align="center" color="#94a3b8"></a-text>
+      </a-entity>
     </a-entity>
 
     <!-- Ergonomic Spatial UI Dock (-10 deg tilt, 2.0m distance) -->
-    <a-entity id="ui-dock" position="0 1.3 -2.0" rotation="-10 0 0">
+    <a-entity id="ui-dock" position="0 1.25 -2.0" rotation="-10 0 0">
       
       <!-- Dock Backing -->
-      <a-plane width="2.4" height="0.85" color="#0f172a" opacity="0.85" class="clickable" material="transparent: true"></a-plane>
-      <a-text value="EXPLORE SPACES" align="center" position="0 0.3 0.01" width="2.2" color="#94a3b8" letter-spacing="2"></a-text>
+      <a-plane width="2.4" height="0.85" color="#0f172a" opacity="0.9" material="transparent: true"></a-plane>
+      <a-text value="SELECT ARCHITECTURAL SPACE" align="center" position="0 0.3 0.01" width="2.3" color="#94a3b8" letter-spacing="2"></a-text>
 
-      <!-- Card 1: Bangkok Civic Plaza -->
+      <!-- Thumbnail 1: Bangkok Civic Plaza -->
       <a-entity position="-0.7 -0.05 0.02">
         <a-plane 
-          class="clickable ui-card" 
+          class="clickable scene-button" 
           src="#scene-bangkok" 
+          data-target="#scene-bangkok"
+          data-title="Bangkok Civic Plaza"
+          data-desc="Neoclassical colonnade civic hall and open urban plaza with high-rise commercial core in background."
+          data-audio="false"
           width="0.6" 
           height="0.38" 
-          material="color: #ffffff"
-          onclick="loadScene('#scene-bangkok')">
+          material="color: #ffffff">
         </a-plane>
         <a-text value="Civic Plaza" align="center" position="0 -0.25 0.01" width="1.6" color="#f8fafc"></a-text>
       </a-entity>
 
-      <!-- Card 2: Aurora Landscape -->
+      <!-- Thumbnail 2: Aurora Site -->
       <a-entity position="0 -0.05 0.02">
         <a-plane 
-          class="clickable ui-card" 
+          class="clickable scene-button" 
           src="#scene-arora" 
+          data-target="#scene-arora"
+          data-title="Boreal Aurora Night"
+          data-desc="Sub-arctic winter terrain illuminated by green aurora borealis. Features ambient night soundscape."
+          data-audio="true"
           width="0.6" 
           height="0.38" 
-          material="color: #ffffff"
-          onclick="loadScene('#scene-arora')">
+          material="color: #ffffff">
         </a-plane>
-        <a-text value="Aurora Site" align="center" position="0 -0.25 0.01" width="1.6" color="#f8fafc"></a-text>
+        <a-text value="Aurora (Audio)" align="center" position="0 -0.25 0.01" width="1.6" color="#38bdf8"></a-text>
       </a-entity>
 
-      <!-- Card 3: Waterfront Pier -->
+      <!-- Thumbnail 3: Waterfront Pier -->
       <a-entity position="0.7 -0.05 0.02">
         <a-plane 
-          class="clickable ui-card" 
+          class="clickable scene-button" 
           src="#scene-pool" 
+          data-target="#scene-pool"
+          data-title="Lake Manson Pier"
+          data-desc="Lakeside boardwalk structure with steel safety balustrades overlooking montane backdrop."
+          data-audio="false"
           width="0.6" 
           height="0.38" 
-          material="color: #ffffff"
-          onclick="loadScene('#scene-pool')">
+          material="color: #ffffff">
         </a-plane>
         <a-text value="Waterfront Pier" align="center" position="0 -0.25 0.01" width="1.6" color="#f8fafc"></a-text>
       </a-entity>
     </a-entity>
 
+    <!-- Architectural Information Board (Placed in Right Peripheral Field of View) -->
+    <a-entity id="info-board" position="1.9 1.45 -1.7" rotation="-5 -35 0">
+      <a-plane width="1.3" height="0.8" color="#0b1329" opacity="0.92" material="transparent: true"></a-plane>
+      <!-- Accent Header Bar -->
+      <a-plane width="1.3" height="0.04" color="#38bdf8" position="0 0.38 0.01"></a-plane>
+      
+      <a-text id="info-title" value="Boreal Aurora Night" position="-0.58 0.27 0.02" width="2.3" color="#38bdf8" font="kelsonsans"></a-text>
+      <a-text id="info-desc" value="Sub-arctic winter terrain illuminated by green aurora borealis. Features ambient night soundscape." position="-0.58 0.06 0.02" width="1.7" color="#cbd5e1" wrap-count="24"></a-text>
+      <a-text id="info-status" value="Audio: Playing" position="-0.58 -0.3 0.02" width="1.5" color="#4ade80"></a-text>
+    </a-entity>
+
   </a-scene>
 
   <script>
-    // Remove screen preloader once assets are loaded
+    // Asset loading overlay removal
     window.addEventListener('load', () => {
       const overlay = document.getElementById('loading-overlay');
-      overlay.style.opacity = '0';
-      setTimeout(() => overlay.remove(), 500);
+      if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 500);
+      }
     });
 
-    // Scene Transition Engine
-    let isTransitioning = false;
-    function loadScene(targetAssetId) {
-      if (isTransitioning) return;
-      
-      const sky = document.querySelector('#skybox');
-      if (sky.getAttribute('src') === targetAssetId) return;
-
-      isTransitioning = true;
-
-      // Fade out
-      sky.setAttribute('animation__fadeout', {
-        property: 'material.opacity',
-        to: 0,
-        dur: 350,
-        easing: 'easeInOutQuad'
-      });
-
-      // Switch texture and fade back in
-      setTimeout(() => {
-        sky.setAttribute('src', targetAssetId);
-        sky.removeAttribute('animation__fadeout');
-        sky.setAttribute('animation__fadein', {
-          property: 'material.opacity',
-          to: 1,
-          dur: 400,
-          easing: 'easeInOutQuad'
-        });
-
-        setTimeout(() => {
-          sky.removeAttribute('animation__fadein');
-          isTransitioning = false;
-        }, 420);
-      }, 360);
-    }
-
-    // Interactive button hover scale
-    AFRAME.registerComponent('ui-hover-effect', {
+    // Custom WebXR Click and Audio Manager Component
+    AFRAME.registerComponent('scene-switcher', {
       init: function () {
         const el = this.el;
+        const sky = document.querySelector('#skybox');
+        const audioEl = document.querySelector('#aurora-sound');
+        const infoTitle = document.querySelector('#info-title');
+        const infoDesc = document.querySelector('#info-desc');
+        const infoStatus = document.querySelector('#info-status');
+
+        // Hover feedback
         el.addEventListener('mouseenter', () => {
           el.setAttribute('scale', '1.08 1.08 1.08');
         });
         el.addEventListener('mouseleave', () => {
           el.setAttribute('scale', '1 1 1');
         });
+
+        // Click handler across Touch Controllers, Gaze reticle, and Desktop Mouse
+        el.addEventListener('click', () => {
+          const targetSrc = el.getAttribute('data-target');
+          const title = el.getAttribute('data-title');
+          const desc = el.getAttribute('data-desc');
+          const hasAudio = el.getAttribute('data-audio') === 'true';
+
+          // Update Information Board text
+          infoTitle.setAttribute('value', title);
+          infoDesc.setAttribute('value', desc);
+
+          // Manage Audio Linkage for Aurora
+          if (hasAudio) {
+            audioEl.currentTime = 0;
+            audioEl.play().catch(err => console.log('Audio autoplay prevented:', err));
+            infoStatus.setAttribute('value', 'Audio: Playing');
+            infoStatus.setAttribute('color', '#4ade80');
+          } else {
+            audioEl.pause();
+            infoStatus.setAttribute('value', 'Audio: Off');
+            infoStatus.setAttribute('color', '#94a3b8');
+          }
+
+          // Smooth Skybox Transition
+          sky.setAttribute('animation__fadeout', {
+            property: 'material.opacity',
+            to: 0,
+            dur: 300,
+            easing: 'easeInOutQuad'
+          });
+
+          setTimeout(() => {
+            sky.setAttribute('src', targetSrc);
+            sky.removeAttribute('animation__fadeout');
+            sky.setAttribute('animation__fadein', {
+              property: 'material.opacity',
+              to: 1,
+              dur: 400,
+              easing: 'easeInOutQuad'
+            });
+            setTimeout(() => sky.removeAttribute('animation__fadein'), 420);
+          }, 320);
+        });
       }
     });
 
-    document.querySelectorAll('.ui-card').forEach(card => {
-      card.setAttribute('ui-hover-effect', '');
+    // Attach scene switcher logic to all buttons once DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.scene-button').forEach(btn => {
+        btn.setAttribute('scene-switcher', '');
+      });
     });
   </script>
 </body>
